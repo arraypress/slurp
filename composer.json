@@ -1,0 +1,18 @@
+{
+  "name": "arraypress/slurp",
+  "description": "The Slurp library provides a powerful and efficient solution for dynamically including PHP files in WordPress or general PHP projects. It supports recursive file inclusion, conditional inclusion via callbacks, and offers robust debugging capabilities by tracking and logging included files. Ideal for organized and efficient file management in plugin or application development.",
+  "type": "library",
+  "license": "GPL-2.0-or-later",
+  "minimum-stability": "stable",
+  "require": {
+    "php": "^7.4|^8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ArrayPress\\Utils\\": "src/"
+    },
+    "files": [
+      "src/Functions.php"
+    ]
+  }
+}
