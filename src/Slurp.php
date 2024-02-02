@@ -10,25 +10,27 @@
  * dumping the list of included files into a specified file.
  *
  * Usage:
- * - Basic inclusion: `$slurper->include('classes');`
- * - Recursive inclusion: `$slurper->include('classes', true);`
- * - Conditional inclusion with callback: `$slurper->include(['classes' => function($filePath) { return ...; }]);`
- * - Dumping loaded files for debugging: `$slurper->dumpFiles('debug.txt');`
- * - Displaying loaded files: `$loadedFiles = $slurper->displayFiles();`
+ * - Basic inclusion: `$slurp->include('classes');`
+ * - Recursive inclusion: `$slurp->include('classes', true);`
+ * - Conditional inclusion with callback: `$slurp->include(['classes' => function($filePath) { return ...; }]);`
+ * - Dumping loaded files for debugging: `$slurp->dumpFiles('debug.txt');`
+ * - Displaying loaded files: `$loadedFiles = $slurp->displayFiles();`
  *
- * @package     ArrayPress/Utils/Slurp
+ * @package     ArrayPress/Slurp
  * @copyright   Copyright (c) 2024, ArrayPress Limited
  * @license     GPL2+
- * @since       1.0.0
+ * @version     1.0.0
  * @author      David Sherlock
  */
 
+declare( strict_types=1 );
+
 namespace ArrayPress\Utils;
 
-use InvalidArgumentException,
-	RecursiveIteratorIterator,
-	RecursiveDirectoryIterator,
-	DirectoryIterator;
+use DirectoryIterator;
+use InvalidArgumentException;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 if ( ! class_exists( 'Slurp' ) ) :
 
@@ -93,15 +95,47 @@ if ( ! class_exists( 'Slurp' ) ) :
 		}
 
 		/**
+		 * Set the list of filenames to be excluded from inclusion.
+		 *
+		 * @param array $files Array of filenames to exclude.
+		 *
+		 * @return void
+		 * @throws InvalidArgumentException If any of the filenames is not a string.
+		 */
+		public function set_excluded( array $files ): void {
+			foreach ( $files as $file ) {
+				if ( ! is_string( $file ) ) {
+					throw new InvalidArgumentException( 'All excluded files must be strings.' );
+				}
+			}
+			$this->excludedFiles = $files;
+		}
+
+		/**
+		 * Set the default global callback for file inclusion.
+		 *
+		 * @param callable|null $callback The callback function to set.
+		 *
+		 * @return void
+		 * @throws InvalidArgumentException If the provided callback is not callable or null.
+		 */
+		public function set_callback( ?callable $callback ): void {
+			if ( ! is_null( $callback ) && ! is_callable( $callback ) ) {
+				throw new InvalidArgumentException( 'Provided callback is not callable.' );
+			}
+			$this->globalCallback = $callback;
+		}
+
+		/**
 		 * Includes PHP files from specified directories.
 		 * Handles the inclusion of PHP files from a given directory or an array of directories.
 		 * Supports recursion and conditional inclusion using callbacks. Throws an InvalidArgumentException
 		 * if the provided callback is not callable.
 		 *
 		 * Examples:
-		 * - Include all files in a directory: $slurper->include('path/to/dir');
-		 * - Include files recursively: $slurper->include('path/to/dir', true);
-		 * - Include files based on a callback condition: $slurper->include(['path/to/dir' => function($file) { return strpos($file, 'test') !== false; }]);
+		 * - Include all files in a directory: $slurp->include('path/to/dir');
+		 * - Include files recursively: $slurp->include('path/to/dir', true);
+		 * - Include files based on a callback condition: $slurp->include(['path/to/dir' => function($file) { return strpos($file, 'test') !== false; }]);
 		 *
 		 * @param string|array|null $dirs      Single directory, an array of directories, or directory-callback pairs, or null for the base directory.
 		 * @param bool              $recursive Whether to include files recursively.
@@ -131,7 +165,7 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 * @param bool          $recursive   Whether to include files recursively.
 		 * @param callable|null $callback    Optional callback for conditional inclusion.
 		 */
-		private function processDirectory( string $relativeDir, bool $recursive, ?callable $callback ): void {
+		protected function processDirectory( string $relativeDir, bool $recursive, ?callable $callback ): void {
 			$dir = $this->baseDir . $relativeDir;
 
 			if ( ! is_dir( $dir ) ) {
@@ -160,7 +194,6 @@ if ( ! class_exists( 'Slurp' ) ) :
 			}
 		}
 
-
 		/**
 		 * Retrieve the list of all loaded files.
 		 *
@@ -183,7 +216,7 @@ if ( ! class_exists( 'Slurp' ) ) :
 			// Generate a random file name if none is provided
 			if ( empty( $dumpFileName ) ) {
 				$dumpFileName = 'loaded_files_' . bin2hex( random_bytes( 8 ) ) . '.txt';
-			} elseif ( ! str_ends_with( $dumpFileName, '.txt' ) ) {
+			} elseif ( ! $this->endsWith( $dumpFileName, '.txt' ) ) { // Use the custom endsWith function
 				throw new InvalidArgumentException( 'The dump file name must end with .txt' );
 			}
 
@@ -195,6 +228,23 @@ if ( ! class_exists( 'Slurp' ) ) :
 			}
 
 			file_put_contents( $dumpFilePath, print_r( $this->loadedFiles, true ) );
+		}
+
+		/**
+		 * Checks if a string ends with a given substring.
+		 *
+		 * @param string $haystack The string to search in.
+		 * @param string $needle   The substring to search for.
+		 *
+		 * @return bool Returns true if $haystack ends with $needle, false otherwise.
+		 */
+		private function endsWith( string $haystack, string $needle ): bool {
+			$length = strlen( $needle );
+			if ( $length == 0 ) {
+				return true;
+			}
+
+			return ( substr( $haystack, - $length ) === $needle );
 		}
 
 		/**
