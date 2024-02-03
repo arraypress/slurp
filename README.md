@@ -108,7 +108,7 @@ you need to redefine the entire list of exclusions.
 
 ```php
 // Set a new list of specific files to be excluded from inclusion.
-$slurp->setExcluded(['newexclude.php', 'anotherexclude.php']);
+$slurp->setExcluded( ['newexclude.php', 'anotherexclude.php'] );
 // This will override any previous exclusions and only exclude 'newexclude.php' and 'anotherexclude.php'.
 ```
 
@@ -120,14 +120,14 @@ after the Slurp instance has been created.
 
 ```php
 // Add a single file to the existing list of excluded files.
-$slurp->addExclusion('additionalExclude.php');
+$slurp->addExclusion( 'additionalExclude.php' );
 ```
 
 Or
 
 ```php
 // Add multiple files to the existing list of excluded files.
-$slurp->addExclusion(['additionalExclude1.php', 'additionalExclude2.php']);
+$slurp->addExclusion( ['additionalExclude1.php', 'additionalExclude2.php'] );
 ```
 
 These additions are cumulative and do not overwrite the existing exclusion list but rather extend it. The `addExclusion`
