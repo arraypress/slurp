@@ -43,17 +43,24 @@ composer require arraypress/slurp
 // Require the Composer autoloader.
 require_once __DIR__ . '/vendor/autoload.php';
 
-// 
+// Use the Slurp class from the ArrayPress\Utils namespace.
 Use ArrayPress\Utils\Slurp;
 
-$slurp = new Slurp( __DIR__ ); // Create a Slurp instance for a specific directory.
-$slurp->include( 'subdirectory' ); // Include all PHP files from the specified directory.
+// Create a Slurp instance for a specific directory. This prepares the Slurp class to handle file inclusions from the given directory.
+$slurp = new Slurp(__DIR__);
+
+// Include all PHP files from the specified subdirectory. The include method facilitates the inclusion of files from a directory relative to the base directory specified during instantiation.
+$slurp->include( 'subdirectory' );
+
+// Include all PHP files directly from the base directory. By calling the include method without any arguments, Slurp will include files from the base directory specified during its instantiation.
+$slurp->include();
 ```
 
 #### Recursive File Inclusion
 
 ```php
-$slurp->include( 'subdirectory', true ) ; // Include files from a directory and all its subdirectories.
+// Include files from a directory and all its subdirectories.
+$slurp->include( 'subdirectory', true );
 ```
 
 #### Multiple Directory Inclusion
@@ -136,21 +143,24 @@ method ensures that all specified files are uniquely added, preventing duplicate
 #### Overriding Global Callback
 
 ```php
+ // Global callback to include files only in the WordPress admin area.
 $slurp->setCallback( function( $filePath ) {
-    return is_admin(); // Global callback to include files only in the WordPress admin area.
-} ); // Include all other PHP files from the directory.
+    return is_admin();
+} );
 ```
 
 #### Overriding Base Directory
 
 ```php
-$slurp->setBaseDir( __DIR__ . '/includes' ); // Include all other PHP files from the directory.
+// Include all other PHP files from the directory.
+$slurp->setBaseDir( __DIR__ . '/includes' );
 ```
 
 #### Dumping Loaded Files for Debugging
 
 ```php
-$slurp->dumpFiles( 'debug.txt' ); // Dump the list of included files to a text file for debugging.
+// Dump the list of included files to a text file for debugging.
+$slurp->dumpFiles( 'debug.txt' );
 ```
 
 #### Retrieving List of Loaded Files
@@ -159,7 +169,7 @@ $slurp->dumpFiles( 'debug.txt' ); // Dump the list of included files to a text f
 $loadedFiles = $slurp->getFiles(); // Get an array of all the PHP files that have been included.
 echo '<pre>';
 print_r( $loadedFiles );
-echo '</pre>'; // Display the loaded files (for example purposes).
+echo '</pre>';
 ```
 
 #### Including Files from Multiple Directories
@@ -197,7 +207,7 @@ add_action( 'admin_init', function() {
         'admin', // Subdirectory containing admin files
         false, // Non-recursive inclusion
         function ( $filePath ) {
-            return is_admin(); // Global callback to ensure files are included only in admin context
+            return is_admin();
         }
     );
     // Assume further setup or actions are taken with $slurp if needed

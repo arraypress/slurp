@@ -251,22 +251,47 @@ if ( ! class_exists( 'Slurp' ) ) :
 		}
 
 		/**
-		 * Dumps the list of all loaded files to a file in the base directory.
-		 * Generates a random file name if none is provided. Validates the file extension
-		 * and checks if the location is writable.
+		 * Returns the list of filenames currently excluded from inclusion.
+		 * This method provides access to the filenames that have been marked to be skipped during the file inclusion process.
+		 * It's useful for debugging or managing the exclusion list dynamically.
 		 *
-		 * @param string $dumpFileName Name of the file to dump the list of loaded files.
-		 *
-		 * @throws InvalidArgumentException If the file extension is not .txt or the location is not writable.
+		 * @return array An array of filenames that are excluded from inclusion.
 		 */
-		public function dumpFiles( string $dumpFileName = '' ): void {
-			// Generate a random file name if none is provided
-			if ( empty( $dumpFileName ) ) {
-				$dumpFileName = 'loaded_files_' . bin2hex( random_bytes( 8 ) ) . '.txt';
-			} elseif ( ! $this->endsWith( $dumpFileName, '.txt' ) ) { // Use the custom endsWith function
+		public function getExcluded(): array {
+			return $this->excludedFiles;
+		}
+
+		/**
+		 * Generates a file name for dumping loaded files.
+		 * If a file name is provided, it validates the file extension.
+		 * If no file name is provided, it generates a random file name with a .txt extension.
+		 *
+		 * @param string $fileName Optional. The base name for the dump file.
+		 *
+		 * @return string The generated or validated file name with a .txt extension.
+		 * @throws InvalidArgumentException If the file name extension is not .txt.
+		 */
+		private function generateDumpFileName( string $fileName = '' ): string {
+			if ( empty( $fileName ) ) {
+				return 'loaded_files_' . bin2hex( random_bytes( 8 ) ) . '.txt';
+			} elseif ( ! $this->endsWith( $fileName, '.txt' ) ) {
 				throw new InvalidArgumentException( 'The dump file name must end with .txt' );
 			}
 
+			return $fileName;
+		}
+
+		/**
+		 * Dumps the list of all loaded files to a file in the base directory.
+		 * Uses the generateDumpFileName method to handle file name generation.
+		 * Checks if the location is writable before dumping the files.
+		 *
+		 * @param string $dumpFileName Optional. Name of the file to dump the list of loaded files.
+		 *
+		 * @throws InvalidArgumentException If the location is not writable or the file name is invalid.
+		 */
+		public function dumpFiles( string $dumpFileName = '' ): void {
+			$dumpFileName = $this->generateDumpFileName( $dumpFileName );
 			$dumpFilePath = $this->baseDir . $dumpFileName;
 
 			// Check if the location is writable
