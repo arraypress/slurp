@@ -193,6 +193,27 @@ $slurp->include( [
 ] );
 ```
 
+#### Utilizing Whitelist to Restrict File Inclusion
+
+The whitelist feature allows you to specify a list of directories from which files can be safely included. This is
+particularly useful when you want to include files from a limited set of locations, further tightening security around
+file inclusion.
+
+```php
+$slurp = new Slurp( __DIR__ );
+
+// Add directories to the whitelist
+$slurp->addToWhitelist( __DIR__ . '/safe_includes' );
+$slurp->addToWhitelist( __DIR__ . '/more_safe_includes' );
+
+// Including files from whitelisted directories
+$slurp->include( 'safe_includes' ); // Allowed
+$slurp->include( 'more_safe_includes' ); // Allowed
+
+// Attempting to include files from a directory not in the whitelist will prevent inclusion
+$slurp->include( 'unsafe_includes' ); // Prevented, no exception thrown but inclusion does not happen
+```
+
 #### Using the Helper Function in WordPress
 
 ##### Example 1: Including Files for Admin Pages Only

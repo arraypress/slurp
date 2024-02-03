@@ -73,6 +73,20 @@ if ( ! class_exists( 'Slurp' ) ) :
 		private array $excludedFiles;
 
 		/**
+		 * A list of directories that are allowed for file inclusion.
+		 *
+		 * @var array
+		 */
+		private array $allowedBaseDirs = [];
+
+		/**
+		 * Maintains a list of directories allowed for file inclusion to ensure security.
+		 *
+		 * @var array
+		 */
+		private array $whitelist = [];
+
+		/**
 		 * Constructor for the Slurp class.
 		 * Initializes the Slurp class with the base directory for file inclusion, an optional global callback,
 		 * and an array of filenames to exclude. The global callback is applied as a default condition for including files
@@ -102,23 +116,25 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 */
 		public function setBaseDir( string $baseDir ): void {
 			$this->validateDir( $baseDir ); // Validate the new base directory
-			$this->baseDir = self::trailingslashit( $baseDir ); // Set and normalize the new base directory
+			$this->baseDir = self::trailingSlashIt( $baseDir ); // Set and normalize the new base directory
 		}
 
 		/**
-		 * Validates the specified directory.
-		 * Checks if the provided directory path is not empty and exists as a directory.
-		 * Throws an InvalidArgumentException if the validation fails.
+		 * Set the default global callback for file inclusion.
 		 *
-		 * @param string $dir The directory path to validate.
+		 * @param callable|null $callback The callback function to set.
 		 *
-		 * @throws InvalidArgumentException If the directory is invalid (either empty or not existing).
+		 * @return void
+		 * @throws InvalidArgumentException If the provided callback is not callable or null.
 		 */
-		private function validateDir( string $dir ): void {
-			if ( empty( $dir ) || ! is_dir( $dir ) ) {
-				throw new InvalidArgumentException( 'Invalid base directory provided' );
+		public function setCallback( ?callable $callback ): void {
+			if ( ! is_null( $callback ) && ! is_callable( $callback ) ) {
+				throw new InvalidArgumentException( 'Provided callback is not callable.' );
 			}
+			$this->globalCallback = $callback;
 		}
+
+		/** Exclusions ****************************************************************/
 
 		/**
 		 * Adds filenames or an array of filenames to the list of excluded files.
@@ -159,19 +175,80 @@ if ( ! class_exists( 'Slurp' ) ) :
 		}
 
 		/**
-		 * Set the default global callback for file inclusion.
+		 * Returns the list of filenames currently excluded from inclusion.
+		 * This method provides access to the filenames that have been marked to be skipped during the file inclusion process.
+		 * It's useful for debugging or managing the exclusion list dynamically.
 		 *
-		 * @param callable|null $callback The callback function to set.
-		 *
-		 * @return void
-		 * @throws InvalidArgumentException If the provided callback is not callable or null.
+		 * @return array An array of filenames that are excluded from inclusion.
 		 */
-		public function setCallback( ?callable $callback ): void {
-			if ( ! is_null( $callback ) && ! is_callable( $callback ) ) {
-				throw new InvalidArgumentException( 'Provided callback is not callable.' );
-			}
-			$this->globalCallback = $callback;
+		public function getExcluded(): array {
+			return $this->excludedFiles;
 		}
+
+		/** Allowed Base Directories **************************************************/
+
+		/**
+		 * Adds a directory to the list of allowed base directories for file inclusion.
+		 * This method checks if the specified directory exists and normalizes its path
+		 * before adding it to the list of allowed directories. If the directory does not exist,
+		 * an InvalidArgumentException is thrown.
+		 *
+		 * @param string $dir The directory to be added to the list of allowed base directories.
+		 *
+		 * @throws InvalidArgumentException If the specified directory does not exist.
+		 */
+		public function addAllowedBaseDir( string $dir ) {
+			if ( is_dir( $dir ) ) {
+				$this->allowedBaseDirs[] = realpath( $dir );
+			} else {
+				throw new InvalidArgumentException( "Directory $dir does not exist." );
+			}
+		}
+
+		/**
+		 * Checks if a given path is within the allowed base directories.
+		 * This method resolves the real path of the given file or directory and checks
+		 * if it starts with any of the allowed base directories' paths. This is used to
+		 * ensure that file inclusion is restricted to approved directories, enhancing security.
+		 *
+		 * @param string $path The path to check against the list of allowed base directories.
+		 *
+		 * @return bool True if the path is within one of the allowed base directories, false otherwise.
+		 */
+		private function isWithinAllowedDirs( string $path ): bool {
+			$realPath = realpath( $path );
+			foreach ( $this->allowedBaseDirs as $allowedDir ) {
+				if ( strpos( $realPath, $allowedDir ) === 0 ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/** Whitelist *****************************************************************/
+
+		/**
+		 * Adds a directory to the whitelist, ensuring files can be included from this location.
+		 *
+		 * @param string $path The directory path to add to the whitelist.
+		 */
+		public function addToWhitelist( string $path ) {
+			$this->whitelist[] = realpath( $path );
+		}
+
+		/**
+		 * Checks if a given path is in the whitelist, allowing for file inclusion.
+		 *
+		 * @param string $path The file or directory path to check against the whitelist.
+		 *
+		 * @return bool Returns true if the path is in the whitelist, false otherwise.
+		 */
+		private function isInWhitelist( string $path ): bool {
+			return in_array( realpath( $path ), $this->whitelist );
+		}
+
+		/** Core **********************************************************************/
 
 		/**
 		 * Includes PHP files from specified directories.
@@ -192,6 +269,9 @@ if ( ! class_exists( 'Slurp' ) ) :
 				$dirs = [ '' => $this->globalCallback ];
 			} elseif ( is_string( $dirs ) ) {
 				$dirs = [ $dirs => $this->globalCallback ];
+			} elseif ( is_array( $dirs ) && array_values( $dirs ) === $dirs ) { // Check if it's an indexed array
+				// Convert indexed array to an associative array with global callback
+				$dirs = array_fill_keys( $dirs, $this->globalCallback );
 			}
 
 			foreach ( $dirs as $dir => $callback ) {
@@ -214,9 +294,19 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 */
 		protected function processDirectory( string $relativeDir, bool $recursive, ?callable $callback ): void {
 			$dir = $this->baseDir . $relativeDir;
+			$dir = $this->sanitizePath( $dir );
 
 			if ( ! is_dir( $dir ) ) {
 				return;
+			}
+
+			// Perform checks only if allowedBaseDirs or whitelist has been populated
+			if ( ! empty( $this->allowedBaseDirs ) && ! $this->isWithinAllowedDirs( $dir ) ) {
+				throw new InvalidArgumentException( "Attempting to include files from an unauthorized directory: $dir" );
+			}
+
+			if ( ! empty( $this->whitelist ) && ! $this->isInWhitelist( $dir ) ) {
+				throw new InvalidArgumentException( "Attempting to include files from an unauthorized directory: $dir" );
 			}
 
 			$iterator = $recursive
@@ -241,6 +331,8 @@ if ( ! class_exists( 'Slurp' ) ) :
 			}
 		}
 
+		/** Debugging *****************************************************************/
+
 		/**
 		 * Retrieve the list of all loaded files.
 		 *
@@ -248,17 +340,6 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 */
 		public function getFiles(): array {
 			return $this->loadedFiles;
-		}
-
-		/**
-		 * Returns the list of filenames currently excluded from inclusion.
-		 * This method provides access to the filenames that have been marked to be skipped during the file inclusion process.
-		 * It's useful for debugging or managing the exclusion list dynamically.
-		 *
-		 * @return array An array of filenames that are excluded from inclusion.
-		 */
-		public function getExcluded(): array {
-			return $this->excludedFiles;
 		}
 
 		/**
@@ -302,6 +383,8 @@ if ( ! class_exists( 'Slurp' ) ) :
 			file_put_contents( $dumpFilePath, print_r( $this->loadedFiles, true ) );
 		}
 
+		/** Helpers *******************************************************************/
+
 		/**
 		 * Checks if a string ends with a given substring.
 		 *
@@ -320,14 +403,52 @@ if ( ! class_exists( 'Slurp' ) ) :
 		}
 
 		/**
-		 * Adds a trailing slash to a file path.
+		 * Adds a trailing slash to a file path for uniformity.
 		 *
-		 * @param string $path File path.
+		 * Ensures that all paths have a consistent ending with a trailing slash,
+		 * which is useful for constructing file paths that are meant to be directories.
+		 * This method normalizes the path by adding a DIRECTORY_SEPARATOR at the end if it's not already present.
 		 *
-		 * @return string Path with trailing slash.
+		 * @param string $path The file or directory path to normalize.
+		 *
+		 * @return string The normalized path with a trailing slash.
 		 */
-		private static function trailingslashit( string $path ): string {
+		private static function trailingSlashIt( string $path ): string {
 			return rtrim( $path, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
+		}
+
+		/**
+		 * Sanitizes a file path to ensure it is safe and normalized.
+		 *
+		 * This method normalizes directory separators to use forward slashes and removes potentially unsafe or
+		 * unnecessary path segments like '../' or './'. It's designed to prevent directory traversal issues and
+		 * ensure a consistent path format that can be safely used within the application.
+		 *
+		 * @param string $path The original file path to be sanitized.
+		 *
+		 * @return string The sanitized file path with normalized directory separators and removed unsafe segments.
+		 */
+		private function sanitizePath( string $path ): string {
+			// Normalize directory separators and remove any ../ or ./ sequences
+			$path = str_replace( [ '../', './' ], '', $path );
+
+			// Replace backslashes (Windows paths) with forward slashes and ensure a consistent structure
+			return str_replace( '\\', '/', $path );
+		}
+
+		/**
+		 * Validates the specified directory.
+		 * Checks if the provided directory path is not empty and exists as a directory.
+		 * Throws an InvalidArgumentException if the validation fails.
+		 *
+		 * @param string $dir The directory path to validate.
+		 *
+		 * @throws InvalidArgumentException If the directory is invalid (either empty or not existing).
+		 */
+		private function validateDir( string $dir ): void {
+			if ( empty( $dir ) || ! is_dir( $dir ) ) {
+				throw new InvalidArgumentException( 'Invalid base directory provided' );
+			}
 		}
 
 	}
