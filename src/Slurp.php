@@ -86,12 +86,59 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 * @throws InvalidArgumentException If the provided base directory is invalid.
 		 */
 		public function __construct( string $baseDir = __DIR__, ?callable $globalCallback = null, array $excludedFiles = [ 'index.php' ] ) {
-			if ( empty( $baseDir ) || ! is_dir( $baseDir ) ) {
+			$this->setBaseDir( $baseDir );
+			$this->globalCallback = $globalCallback;
+			$this->excludedFiles  = $excludedFiles;
+		}
+
+		/**
+		 * Sets a new base directory for file inclusion.
+		 * Validates the new base directory before setting it, ensuring it exists and is a directory.
+		 * This method allows changing the base directory after the object has been instantiated.
+		 *
+		 * @param string $baseDir New base directory path.
+		 *
+		 * @throws InvalidArgumentException If the provided base directory is invalid.
+		 */
+		public function setBaseDir( string $baseDir ): void {
+			$this->validateDir( $baseDir ); // Validate the new base directory
+			$this->baseDir = self::trailingslashit( $baseDir ); // Set and normalize the new base directory
+		}
+
+		/**
+		 * Validates the specified directory.
+		 * Checks if the provided directory path is not empty and exists as a directory.
+		 * Throws an InvalidArgumentException if the validation fails.
+		 *
+		 * @param string $dir The directory path to validate.
+		 *
+		 * @throws InvalidArgumentException If the directory is invalid (either empty or not existing).
+		 */
+		private function validateDir( string $dir ): void {
+			if ( empty( $dir ) || ! is_dir( $dir ) ) {
 				throw new InvalidArgumentException( 'Invalid base directory provided' );
 			}
-			$this->baseDir        = self::trailingslashit( $baseDir );
-			$this->globalCallback = $globalCallback;  // Set the global callback
-			$this->excludedFiles  = $excludedFiles;
+		}
+
+		/**
+		 * Adds filenames or an array of filenames to the list of excluded files.
+		 * This method allows for dynamically excluding additional files from being included.
+		 * If a string is provided, it is added to the list of exclusions. If an array is provided,
+		 * it merges the array with the existing exclusions, ensuring all values are unique.
+		 * Throws an InvalidArgumentException if the exclusions parameter is neither a string nor an array.
+		 *
+		 * @param string|array $exclusions The filename(s) to exclude.
+		 *
+		 * @throws InvalidArgumentException If exclusions is not a string or an array of strings.
+		 */
+		public function addExclusion( $exclusions ): void {
+			if ( is_string( $exclusions ) ) {
+				$this->excludedFiles[] = $exclusions;
+			} elseif ( is_array( $exclusions ) ) {
+				$this->excludedFiles = array_unique( array_merge( $this->excludedFiles, $exclusions ) );
+			} else {
+				throw new InvalidArgumentException( 'Exclusions must be a string or an array of strings.' );
+			}
 		}
 
 		/**
@@ -102,7 +149,7 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 * @return void
 		 * @throws InvalidArgumentException If any of the filenames is not a string.
 		 */
-		public function set_excluded( array $files ): void {
+		public function setExcluded( array $files ): void {
 			foreach ( $files as $file ) {
 				if ( ! is_string( $file ) ) {
 					throw new InvalidArgumentException( 'All excluded files must be strings.' );
@@ -119,7 +166,7 @@ if ( ! class_exists( 'Slurp' ) ) :
 		 * @return void
 		 * @throws InvalidArgumentException If the provided callback is not callable or null.
 		 */
-		public function set_callback( ?callable $callback ): void {
+		public function setCallback( ?callable $callback ): void {
 			if ( ! is_null( $callback ) && ! is_callable( $callback ) ) {
 				throw new InvalidArgumentException( 'Provided callback is not callable.' );
 			}

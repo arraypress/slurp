@@ -88,26 +88,63 @@ $slurp = new Slurp( __DIR__, function( $filePath ) {
 $slurp->include( [ 'admin', 'reports' ] );
 ```
 
-#### Excluding Specific Files
+#### Excluding Specific Files Upon Initialization
+
+When creating a new instance of the `Slurp` class, you can immediately specify files to exclude by passing an array of
+filenames as the third argument to the constructor. This method is useful when you know upfront which files should not
+be included.
 
 ```php
-// Exclude specific files from being included.
+// Initialize Slurp with an exclusion list.
 $slurp = new Slurp( __DIR__, null, [ 'index.php', 'exclude.php' ] );
-$slurp->include(); // Include all other PHP files from the directory.
+// Proceed to include all PHP files from the directory except 'index.php' and 'exclude.php'.
+$slurp->include();
+```
+
+#### Setting an Exclusion List
+
+The `setExcluded` method replaces the current list of excluded files with a new array of filenames. Use this method when
+you need to redefine the entire list of exclusions.
+
+```php
+// Set a new list of specific files to be excluded from inclusion.
+$slurp->setExcluded(['newexclude.php', 'anotherexclude.php']);
+// This will override any previous exclusions and only exclude 'newexclude.php' and 'anotherexclude.php'.
+```
+
+#### Adding to an Existing Exclusion List
+
+The `addExclusion` method allows you to add one or more files to the existing list of exclusions. You can pass a single
+filename as a string or an array of filenames. This method is ideal for dynamically adjusting the list of exclusions
+after the Slurp instance has been created.
+
+```php
+// Add a single file to the existing list of excluded files.
+$slurp->addExclusion('additionalExclude.php');
 ```
 
 Or
 
 ```php
-$slurp->set_excluded( ['exclude.php'] ); // Exclude specific files from being included.
+// Add multiple files to the existing list of excluded files.
+$slurp->addExclusion(['additionalExclude1.php', 'additionalExclude2.php']);
 ```
+
+These additions are cumulative and do not overwrite the existing exclusion list but rather extend it. The `addExclusion`
+method ensures that all specified files are uniquely added, preventing duplicates in the exclusion list.
 
 #### Overriding Global Callback
 
 ```php
-$slurp->set_callback( function( $filePath ) {
+$slurp->setCallback( function( $filePath ) {
     return is_admin(); // Global callback to include files only in the WordPress admin area.
 } ); // Include all other PHP files from the directory.
+```
+
+#### Overriding Base Directory
+
+```php
+$slurp->setBaseDir( __DIR__ . '/includes' ); // Include all other PHP files from the directory.
 ```
 
 #### Dumping Loaded Files for Debugging
@@ -132,7 +169,7 @@ echo '</pre>'; // Display the loaded files (for example purposes).
 $slurp = new Slurp( __DIR__ );
 
 // Include files from multiple directories.
-$directories = ['directory1', 'directory2', 'directory3'];
+$directories = [ 'directory1', 'directory2', 'directory3' ];
 $slurp->include( $directories );
 
 // You can also include files recursively from these directories
@@ -156,8 +193,8 @@ accessed. This can be useful for loading admin-specific functionalities.
 ```php
 add_action( 'admin_init', function() {
     $slurp = slurp(
-        __DIR__ . '/admin', // Base directory targeted towards admin-related files
-        '', // Include directly from the base directory
+        __DIR__, // Base directory targeted towards admin-related files
+        'admin', // Subdirectory containing admin files
         false, // Non-recursive inclusion
         function ( $filePath ) {
             return is_admin(); // Global callback to ensure files are included only in admin context
@@ -207,8 +244,8 @@ This example demonstrates how to use the `excludedFiles` parameter for this purp
 
 ```php
 $slurp = slurp(
-    __DIR__ . '/includes', // Base directory for inclusion
-    '', // No specific subdirectory, include directly from the base
+    __DIR__, // Base directory for inclusion
+    'includes', // Subdirectory containing plugin include files
     false, // Non-recursive inclusion
     null, // No global callback, include all files
     [ 'example.php', 'readme.md' ] // Exclude example and readme files from inclusion
@@ -223,8 +260,8 @@ for logging errors or handling them in a specific manner within your WordPress e
 
 ```php
 $slurp = slurp(
-    __DIR__ . '/critical', // Base directory for critical functionalities
-    '', // Include directly from the base directory
+    __DIR__, // Base directory for critical functionalities
+    'critical', // Include directly from the base directory
     false, // Non-recursive inclusion
     null, // No global callback, include all files
     [], // No files are excluded
