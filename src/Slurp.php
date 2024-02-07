@@ -108,15 +108,24 @@ if ( ! class_exists( 'Slurp' ) ) :
 		/**
 		 * Sets a new base directory for file inclusion.
 		 * Validates the new base directory before setting it, ensuring it exists and is a directory.
+		 * Automatically detects if the provided path is a file and uses its directory.
 		 * This method allows changing the base directory after the object has been instantiated.
 		 *
-		 * @param string $baseDir New base directory path.
+		 * @param string $baseDir New base directory path or file path.
 		 *
 		 * @throws InvalidArgumentException If the provided base directory is invalid.
 		 */
 		public function setBaseDir( string $baseDir ): void {
-			$this->validateDir( $baseDir ); // Validate the new base directory
-			$this->baseDir = self::trailingSlashIt( $baseDir ); // Set and normalize the new base directory
+			// Check if the path is a file, if so, get the directory of the file
+			if ( ! is_dir( $baseDir ) ) {
+				$baseDir = dirname( $baseDir );
+			}
+
+			// Validate the new base directory
+			$this->validateDir( $baseDir );
+
+			// Normalize and set the new base directory
+			$this->baseDir = self::trailingSlashIt( $baseDir );
 		}
 
 		/**
