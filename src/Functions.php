@@ -19,8 +19,8 @@ namespace {
 		/**
 		 * Function to instantiate the Slurp class and include files with optional recursion.
 		 *
-		 * @param string        $baseDir        Base directory for file inclusion.
 		 * @param array|string  $filesDirs      Array or string of directory paths to include.
+		 * @param string        $baseDir        Base directory for file inclusion.
 		 * @param bool          $recursive      Whether to include files recursively.
 		 * @param callable|null $globalCallback A global callback function for file inclusion conditions.
 		 * @param array         $excludedFiles  Array of filenames to exclude from inclusion.
@@ -28,7 +28,7 @@ namespace {
 		 *
 		 * @return Slurp|null The initialized Slurp instance or null on failure.
 		 */
-		function slurp( string $baseDir = __DIR__, $filesDirs = [], bool $recursive = false, ?callable $globalCallback = null, array $excludedFiles = [ 'index.php' ], ?callable $errorCallback = null ): ?Slurp {
+		function slurp( $filesDirs = [], string $baseDir = __DIR__, bool $recursive = false, ?callable $globalCallback = null, array $excludedFiles = [ 'index.php' ], ?callable $errorCallback = null ): ?Slurp {
 			try {
 				$slurp = new Slurp( $baseDir, $globalCallback, $excludedFiles );
 

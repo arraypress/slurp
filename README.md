@@ -224,8 +224,8 @@ accessed. This can be useful for loading admin-specific functionalities.
 ```php
 add_action( 'admin_init', function() {
     $slurp = slurp(
-        __DIR__, // Base directory targeted towards admin-related files
         'admin', // Subdirectory containing admin files
+        __DIR__, // Base directory targeted towards admin-related files
         false, // Non-recursive inclusion
         function ( $filePath ) {
             return is_admin();
@@ -242,8 +242,8 @@ ensure that files in subdirectories are also loaded.
 
 ```php
 $slurp = slurp(
-    __DIR__, // Plugin root directory
     'dev-tools', // Subdirectory containing development tools
+    __DIR__, // Plugin root directory
     true, // Recursive inclusion to get all tools
     function ( $filePath ) {
         return defined('WP_DEBUG') && WP_DEBUG; // Only include if WP_DEBUG is true
@@ -258,8 +258,8 @@ environment. This is useful for loading debug tools or additional resources that
 
 ```php
 $slurp = slurp(
-    __DIR__, // Plugin root directory
     'dev-tools', // Subdirectory containing development tools
+    __DIR__, // Plugin root directory
     true, // Recursive inclusion to get all tools
     function ( $filePath ) {
         return defined('WP_DEBUG') && WP_DEBUG; // Only include if WP_DEBUG is true
@@ -275,8 +275,8 @@ This example demonstrates how to use the `excludedFiles` parameter for this purp
 
 ```php
 $slurp = slurp(
-    __DIR__, // Base directory for inclusion
     'includes', // Subdirectory containing plugin include files
+    __DIR__, // Base directory for inclusion
     false, // Non-recursive inclusion
     null, // No global callback, include all files
     [ 'example.php', 'readme.md' ] // Exclude example and readme files from inclusion
@@ -291,8 +291,8 @@ for logging errors or handling them in a specific manner within your WordPress e
 
 ```php
 $slurp = slurp(
-    __DIR__, // Base directory for critical functionalities
     'critical', // Include directly from the base directory
+    __DIR__, // Base directory for critical functionalities
     false, // Non-recursive inclusion
     null, // No global callback, include all files
     [], // No files are excluded
