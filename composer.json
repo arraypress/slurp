@@ -10,12 +10,16 @@
       "homepage": "https://arraypress.com/"
     }
   ],
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
   "require": {
     "php": "^7.4 || ^8.0"
   },
   "autoload": {
     "psr-4": {
-      "ArrayPress\\Utils\\": "src/"
+      "ArrayPress\\Utils\\Slurp\\Classes\\": "src/Classes/"
     },
     "files": [
       "src/Functions.php"

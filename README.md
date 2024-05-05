@@ -304,6 +304,30 @@ $slurp = slurp(
 // Critical functionalities are attempted to be loaded, with error handling in place
 ```
 
+##### Example 6: Conditional Inclusion with WordPress Hook
+
+This example shows how to use the slurp_hooked function to include files only when specific conditions are met, such as
+being within the WordPress admin area. This setup is useful for plugins or themes that have admin-specific
+functionality.
+
+```php
+// Attach the file inclusion process to the WordPress 'init' hook
+slurp_hooked(
+    'init',                                  // The WordPress hook to attach to
+    __DIR__,                                 // Base directory for file inclusion
+    'admin',                                 // Subdirectory containing admin files
+    false,                                   // Non-recursive inclusion
+    function ( $filePath ) {                 // Global callback to include files conditionally
+        return is_admin();                   // Only include files if in the admin area
+    },
+    [ 'ignore-this.php', 'old-config.php' ], // Exclude specific files from inclusion
+    10,                                      // Default priority
+    1                                        // Number of arguments accepted by the function
+);
+// Files in the 'admin' subdirectory are included only when the user is in the admin area,
+// and specified files are excluded from inclusion.
+```
+
 ## Contributions
 
 Contributions to this library are highly appreciated. Raise issues on GitHub or submit pull requests for bug

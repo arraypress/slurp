@@ -25,12 +25,34 @@
 
 declare( strict_types=1 );
 
-namespace ArrayPress\Utils;
+namespace ArrayPress\Utils\Slurp\Classes;
 
 use DirectoryIterator;
 use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use function array_fill_keys;
+use function array_merge;
+use function array_unique;
+use function array_values;
+use function bin2hex;
+use function dirname;
+use function file_put_contents;
+use function in_array;
+use function is_array;
+use function is_callable;
+use function is_dir;
+use function is_null;
+use function is_string;
+use function is_writable;
+use function print_r;
+use function random_bytes;
+use function realpath;
+use function rtrim;
+use function str_replace;
+use function strlen;
+use function strpos;
+use function substr;
 
 if ( ! class_exists( 'Slurp' ) ) :
 
