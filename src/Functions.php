@@ -13,9 +13,7 @@ declare( strict_types=1 );
 
 namespace ArrayPress\Utils\Slurp;
 
-use ArrayPress\Utils\Slurp\Classes\Slurp;
 use Exception;
-use function add_action;
 use function call_user_func;
 use function is_callable;
 use function is_string;
@@ -71,8 +69,10 @@ if ( ! function_exists( 'slurp_hooked' ) ) {
 	 * @param int           $acceptedArgs   The number of arguments the function accepts.
 	 */
 	function slurp_hooked( string $hook, string $baseDir = __DIR__, $filesDirs = [], bool $recursive = false, ?callable $globalCallback = null, array $excludedFiles = [ 'index.php' ], int $priority = 10, int $acceptedArgs = 1 ): void {
-		add_action( $hook, function () use ( $baseDir, $filesDirs, $recursive, $globalCallback, $excludedFiles ) {
-			slurp( $baseDir, $filesDirs, $recursive, $globalCallback, $excludedFiles );
-		}, $priority, $acceptedArgs );
+		if ( function_exists( 'add_action' ) ) {
+			add_action( $hook, function () use ( $baseDir, $filesDirs, $recursive, $globalCallback, $excludedFiles ) {
+				slurp( $baseDir, $filesDirs, $recursive, $globalCallback, $excludedFiles );
+			}, $priority, $acceptedArgs );
+		}
 	}
 }
