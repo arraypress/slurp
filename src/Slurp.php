@@ -25,7 +25,7 @@
 
 declare( strict_types=1 );
 
-namespace ArrayPress\Utils\Slurp;
+namespace ArrayPress\Utils;
 
 use DirectoryIterator;
 use InvalidArgumentException;

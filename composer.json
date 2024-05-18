@@ -19,7 +19,7 @@
   },
   "autoload": {
     "psr-4": {
-      "ArrayPress\\Utils\\Slurp\\Classes\\": "src/Classes/"
+      "ArrayPress\\Utils\\": "src/"
     },
     "files": [
       "src/Functions.php"

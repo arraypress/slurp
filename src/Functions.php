@@ -11,7 +11,7 @@
 
 declare( strict_types=1 );
 
-namespace ArrayPress\Utils\Slurp;
+namespace ArrayPress\Utils;
 
 use Exception;
 use function call_user_func;
