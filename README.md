@@ -44,7 +44,7 @@ composer require arraypress/slurp
 require_once __DIR__ . '/vendor/autoload.php';
 
 // Use the Slurp class from the ArrayPress\Utils namespace.
-Use ArrayPress\Utils\Slurp\Slurp;
+Use ArrayPress\Utils\Slurp;
 
 // Create a Slurp instance for a specific directory. This prepares the Slurp class to handle file inclusions from the given directory.
 $slurp = new Slurp(__DIR__);
